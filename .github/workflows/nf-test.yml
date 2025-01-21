@@ -1,0 +1,65 @@
+name: Nextflow Pipeline Test
+
+on:
+  workflow_call:
+    inputs:
+      nextflow_version:
+        description: 'Nextflow version to use'
+        required: false
+        type: string
+        default: '24.10.3'
+      java_version:
+        description: 'Java version to use'
+        required: false
+        type: string
+        default: '17'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_file: ${{ fromJson(github.event.inputs.test_files || '[]') }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java_version }}
+
+      - name: Set up Nextflow
+        uses: nf-core/setup-nextflow@v2
+        with:
+          version: ${{ inputs.nextflow_version }}
+
+      - name: Find test files
+        id: find-tests
+        run: |
+          # Find all test*.yml files in data/test directory
+          echo "test_files=$(find data/test -name "test*.yml" -type f | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+
+      - name: Set up Apptainer
+        uses: eWaterCycle/setup-apptainer@v2
+        with:
+          apptainer-version: 1.3.6
+
+      - name: Run tests
+        run: |
+          # Run each test file
+          for test_file in $(echo '${{ steps.find-tests.outputs.test_files }}' | jq -r '.[]'); do
+            echo "Running test with $test_file"
+            nextflow run . -params-file "$test_file"
+            
+            # Check exit status
+            if [ $? -ne 0 ]; then
+              echo "Test failed with $test_file"
+              exit 1
+            fi
+          done
