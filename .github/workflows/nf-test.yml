@@ -55,6 +55,12 @@ jobs:
         with:
           apptainer-version: 1.3.6
 
+      - name: Run custom setup script
+        run: |
+          if [ -f ".github/workflows/setup.sh" ]; then
+            bash ./.github/workflows/setup.sh
+          fi
+
       - name: Run test
         run: |
           echo "Running test with ${{ matrix.test_file }}"
