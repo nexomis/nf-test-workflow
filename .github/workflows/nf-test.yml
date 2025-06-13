@@ -45,10 +45,15 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ inputs.java_version }}
 
+      - name: Create temp directory
+        run: mkdir -p /tmp/nxf_home
+
       - name: Set up Nextflow
         uses: nf-core/setup-nextflow@v2
         with:
           version: ${{ inputs.nextflow_version }}
+        env:
+          NXF_HOME: /tmp/nxf_home
 
       - name: Set up Apptainer
         uses: eWaterCycle/setup-apptainer@v2
@@ -60,6 +65,8 @@ jobs:
           if [ -f ".github/workflows/setup.sh" ]; then
             bash ./.github/workflows/setup.sh
           fi
+        env:
+          NXF_HOME: /tmp/nxf_home
 
       - name: Run test
         run: |
