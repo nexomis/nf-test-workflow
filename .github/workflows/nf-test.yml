@@ -72,3 +72,5 @@ jobs:
         run: |
           echo "Running test with ${{ matrix.test_file }}"
           nextflow run . -params-file "${{ matrix.test_file }}"
+        env:
+          NXF_HOME: /tmp/nxf_home
